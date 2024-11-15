@@ -1,4 +1,4 @@
-# Basic project template for ESP32 with OTA
+# Environment sensor using Raspberry Pi Pico RP2024
 
 This work is derived from https://randomnerdtutorials.com/esp32-ota-over-the-air-arduino/
 
@@ -16,14 +16,14 @@ This work is derived from https://randomnerdtutorials.com/esp32-ota-over-the-air
 ## Hostmachine
 
 - Ubuntu 22.04.1 LTS  (jammy)
-- Visual Studio Code 1.74.2 (Nov 2022)
-- PlatformIO 2.5.5 (VS Code Extension)
+- Visual Studio Code 1.95.2 (Nov 2024)
+- PlatformIO 3.4.4 (VS Code Extension)
 
 ## Target 
 
-- CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/esp32dev.html
-- PLATFORM: Espressif 32 (5.3.0) > Espressif ESP32 Dev Module
-- HARDWARE: ESP32 240MHz, 320KB RAM, 4MB Flash
+- CONFIGURATION: https://docs.platformio.org/en/latest/boards/raspberrypi/pico.html?utm_source=platformio&utm_medium=piohome#frameworks
+- PLATFORM: Raspberry Pi Pico
+- HARDWARE: 
 
 # Private Data
 
