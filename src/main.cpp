@@ -3,18 +3,26 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
-// #include <WebServer.h>
 #include <ElegantOTA.h>
 #include "MQTT.h"
 
-// override above mentioned private data
-#include "private_data.h"
+#include "switchDebouncer.h"
+#include "wifiHandler.h"
+#include "dht11Handler.h"
+
+#include "definitions.h"
 
 WebServer server(80);
-int doorState = 0;
 unsigned long ota_progress_millis = 0;
-unsigned long lastTimestamp = millis();
-unsigned long ledToggle = millis();
+unsigned long lastTransmitData = millis();
+unsigned long lastMeasurement = millis();
+
+float t = 0.0;
+float h = 0.0;
+
+SwitchDebouncer onlineSwitchDebouncer(WAKEUP_SWITCH, 5000);
+WiFiHandler wifiHandler(SSID, PASS);
+DHT11Handler dht11(DHTPIN);
 
 void onOTAStart()
 {
@@ -54,25 +62,6 @@ void setup()
 
   Serial.begin(115200);
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, pass);
-  Serial.println("");
-
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  client.setServer(MQTT_SERVER, MQTT_PORT);
-  client.setCallback(callback);
-  
   server.on("/", []()
             { server.send(200, "text/plain", "Hi! This is ElegantOTA AsyncDemo."); });
 
@@ -86,6 +75,7 @@ void setup()
   server.begin();
   Serial.println("HTTP server started");
 
+  dht11.begin();
   Serial.println("Ready");
 }
 
@@ -93,15 +83,38 @@ void loop()
 {
   server.handleClient();
   ElegantOTA.loop();
-  if (millis() - ledToggle > 1000)
+  wifiHandler.handleTimeout();
+  onlineSwitchDebouncer.read();
+  if (onlineSwitchDebouncer.isPressed())
   {
-    ledToggle = millis();
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    if (!wifiHandler.isConnected())
+    {
+      Serial.println("--- Switch pressed and WLAN not connected ---");
+      wifiHandler.connect(WLAN_ON_INTERVAL);
+    }
   }
-  if (millis() - lastTimestamp > 10000)
+
+  if (millis() - lastMeasurement > dht11.delayMS * 10)
   {
-    lastTimestamp = millis();
-    transmitData(doorState);
-    doorState = doorState == 0 ? 1 : 0;
+    lastMeasurement = millis();
+    t = dht11.readTemperature();
+    h = dht11.readHumidity();
+  }
+  if (millis() - lastTransmitData > DATA_TRANSMIT_INTERVAL)
+  {
+    bool doDisconnect = false;
+    Serial.println("Transmitting data ...");
+    if (!wifiHandler.isConnected())
+    {
+      wifiHandler.connect(0);
+      doDisconnect = true;
+    }
+    lastTransmitData = millis();
+    transmitData(1, t, h);
+    if (doDisconnect)
+    {
+      Serial.println("Disconnecting ...");
+      wifiHandler.disconnect();
+    }
   }
 }
