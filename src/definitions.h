@@ -9,6 +9,8 @@
 //#define DATA_TRANSMIT_INTERVAL (5 * 60 * 1000) // 5 minutes
 #define DATA_TRANSMIT_INTERVAL (1 * 60 * 1000) // 5 minutes
 
+#define myTOPICSTATUS "/EnviroMonitorStatus"
+
 // override above mentioned private data
 #include "private_data.h"
 

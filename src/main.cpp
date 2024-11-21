@@ -59,11 +59,14 @@ void setup()
 {
   // initialize the digital pin as an output.
   pinMode(LED_BUILTIN, OUTPUT); // Serial port for debugging purposes
+  pinMode(LED_ONLINE, OUTPUT);  // Show online status
+
+  digitalWrite(LED_ONLINE, HIGH);
 
   Serial.begin(115200);
 
   server.on("/", []()
-            { server.send(200, "text/plain", "Hi! This is ElegantOTA AsyncDemo."); });
+            { server.send(200, "text/html", "<!DOCTYPE html><html><body><h1>Hi! This is the Temperature and Humidity sensor.</h1></body></html>"); });
 
   ElegantOTA.begin(&server); // Start ElegantOTA
   ElegantOTA.setAutoReboot(true);
@@ -77,22 +80,28 @@ void setup()
 
   dht11.begin();
   Serial.println("Ready");
+  sleep_ms(500);
+  digitalWrite(LED_ONLINE, LOW);
+  sleep_ms(500);
+  digitalWrite(LED_ONLINE, HIGH);
+  sleep_ms(1000);
+  digitalWrite(LED_ONLINE, LOW);
 }
 
 void loop()
 {
   server.handleClient();
   ElegantOTA.loop();
-  wifiHandler.handleTimeout();
+  // wifiHandler.handleTimeout();
   onlineSwitchDebouncer.read();
-  if (onlineSwitchDebouncer.isPressed())
-  {
-    if (!wifiHandler.isConnected())
-    {
-      Serial.println("--- Switch pressed and WLAN not connected ---");
-      wifiHandler.connect(WLAN_ON_INTERVAL);
-    }
-  }
+  // if (onlineSwitchDebouncer.isPressed())
+  // {
+  //   if (!wifiHandler.isConnected())
+  //   {
+  //     Serial.println("--- Switch pressed and WLAN not connected ---");
+  //     wifiHandler.connect(WLAN_ON_INTERVAL);
+  //   }
+  // }
 
   if (millis() - lastMeasurement > dht11.delayMS * 10)
   {
@@ -111,10 +120,10 @@ void loop()
     }
     lastTransmitData = millis();
     transmitData(1, t, h);
-    if (doDisconnect)
-    {
-      Serial.println("Disconnecting ...");
-      wifiHandler.disconnect();
-    }
+    // if (doDisconnect)
+    // {
+    //   Serial.println("Disconnecting ...");
+    //   wifiHandler.disconnect();
+    // }
   }
 }

@@ -28,11 +28,7 @@ void WiFiHandler::connect(int timeoutSec)
     }
     if (WiFi.status() == WL_CONNECTED)
     {
-        Serial.println("");
-        Serial.print("Connected to ");
-        Serial.println(this->ssid);
-        Serial.print("IP address: ");
-        Serial.println(WiFi.localIP());
+        Serial.printf("Connected to %s\nIP address: %s\n", this->ssid, WiFi.localIP().toString().c_str());
         digitalWrite(LED_ONLINE, HIGH);
         wlanConnected = true;
         lastWlanConnected = millis();

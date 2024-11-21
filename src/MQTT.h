@@ -22,7 +22,7 @@ void callback(char *topic, byte *payload, unsigned int length)
   Serial.println();
 }
 
-void reconnect()
+void reconnect(int id)
 {
   client.setServer(MQTT_SERVER, MQTT_PORT);
   client.setCallback(callback);
@@ -35,9 +35,15 @@ void reconnect()
   }
   if (client.connect(pubSubId, MQTT_USERNAME, MQTT_PASSWORD))
   {
+    JsonDocument doc;
+    String jsonMessageString;
+
+    doc["CONNECTION"] = "MQTT Connected";
+    doc["I"] = id;
+    serializeJson(doc, jsonMessageString);
     Serial.println("MQTT Connected");
     // Once connected, publish an announcement...
-    client.publish(topic, "MQTT Connected");
+    client.publish(myTOPICSTATUS, jsonMessageString.c_str());
     // ... and resubscribe
     client.subscribe("inTopic");
   }
@@ -58,9 +64,11 @@ void transmitData(int id, float temperature, float humidity)
   JsonDocument doc;
   String jsonMessageString;
 
+  digitalWrite(LED_ONLINE, HIGH);
+
   if (!client.connected())
   {
-    reconnect();
+    reconnect(id);
   }
 #ifdef DEBUG
   Serial.println(F("Transmitting packet ... "));
@@ -76,11 +84,8 @@ void transmitData(int id, float temperature, float humidity)
   doc["T"] = temperature;
   doc["H"] = humidity;
   serializeJson(doc, jsonMessageString);
-  Serial.print("JSON message: ");
-  Serial.println(jsonMessageString);
   client.publish(topic, jsonMessageString.c_str());
   sleep_ms(1000);
-  Serial.print("Transmission time duration: ");
-  Serial.print(millis() - entry);
-  Serial.println(" ms");
+  Serial.printf("Transmission time duration: %lu ms\n", millis() - entry);
+  digitalWrite(LED_ONLINE, LOW);
 }
