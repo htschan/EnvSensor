@@ -119,7 +119,7 @@ void loop()
       doDisconnect = true;
     }
     lastTransmitData = millis();
-    transmitData(1, t, h);
+    transmitData(2, t, h);
     // if (doDisconnect)
     // {
     //   Serial.println("Disconnecting ...");

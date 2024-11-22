@@ -16,6 +16,9 @@ void WiFiHandler::connect(int timeoutSec)
 {
     this->timeoutSec = timeoutSec;
     WiFi.mode(WIFI_STA);
+    uint8_t mac[6];
+    WiFi.macAddress(mac);
+    // WiFi.setHostname("ESP32-" + String(mac[3], HEX) + String(mac[4], HEX) + String(mac[5], HEX));
     WiFi.begin(this->ssid, this->password);
     unsigned long entry = millis();
     while (WiFi.status() != WL_CONNECTED)
@@ -29,6 +32,7 @@ void WiFiHandler::connect(int timeoutSec)
     if (WiFi.status() == WL_CONNECTED)
     {
         Serial.printf("Connected to %s\nIP address: %s\n", this->ssid, WiFi.localIP().toString().c_str());
+        Serial.printf("MAC address: %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
         digitalWrite(LED_ONLINE, HIGH);
         wlanConnected = true;
         lastWlanConnected = millis();
