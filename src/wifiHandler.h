@@ -3,6 +3,12 @@
 
 #include <WiFi.h>
 
+struct DeviceInfo {
+  uint8_t mac[6];
+  int id;
+  const char* hostname;
+};
+
 class WiFiHandler
 {
 public:
@@ -11,8 +17,11 @@ public:
     void handleTimeout();
     void disconnect();
     bool isConnected();
+    int hostId;
+    const char *hostName;
 
 private:
+    bool getDeviceInfoByMAC(const uint8_t* mac, int &hostId, const char* &hostName);
     const char *ssid;
     const char *password;
 

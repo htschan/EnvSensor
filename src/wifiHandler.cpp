@@ -12,13 +12,35 @@ WiFiHandler::WiFiHandler(const char *ssid, const char *password)
     pinMode(LED_ONLINE, OUTPUT); // Show online status
 }
 
+DeviceInfo devices[] = {
+    {{0x28, 0xCD, 0xC1, 0x0B, 0x1B, 0xC8}, 1, "THSens-1"},
+    {{0x28, 0xCD, 0xC1, 0x02, 0xA3, 0xAA}, 2, "THSens-2"},
+    {{0x28, 0xCD, 0xC1, 0x02, 0x97, 0x26}, 3, "THSens-3"},
+    {{0x28, 0xCD, 0xC1, 0x02, 0x87, 0xB4}, 4, "THSens-4"}};
+
+bool WiFiHandler::getDeviceInfoByMAC(const uint8_t *mac, int &id, const char *&hostname)
+{
+    for (const auto &device : devices)
+    {
+        if (memcmp(device.mac, mac, 6) == 0)
+        {
+            id = device.id;
+            hostname = device.hostname;
+            return true;
+        }
+    }
+    return false;
+}
+
 void WiFiHandler::connect(int timeoutSec)
 {
     this->timeoutSec = timeoutSec;
     WiFi.mode(WIFI_STA);
     uint8_t mac[6];
     WiFi.macAddress(mac);
-    // WiFi.setHostname("ESP32-" + String(mac[3], HEX) + String(mac[4], HEX) + String(mac[5], HEX));
+    getDeviceInfoByMAC(mac, hostId, hostName);
+    WiFi.setHostname(hostName);
+
     WiFi.begin(this->ssid, this->password);
     unsigned long entry = millis();
     while (WiFi.status() != WL_CONNECTED)
@@ -32,7 +54,7 @@ void WiFiHandler::connect(int timeoutSec)
     if (WiFi.status() == WL_CONNECTED)
     {
         Serial.printf("Connected to %s\nIP address: %s\n", this->ssid, WiFi.localIP().toString().c_str());
-        Serial.printf("MAC address: %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        Serial.printf("MAC address: %02X:%02X:%02X:%02X:%02X:%02X  Hostname: %s\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], hostName);
         digitalWrite(LED_ONLINE, HIGH);
         wlanConnected = true;
         lastWlanConnected = millis();
