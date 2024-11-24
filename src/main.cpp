@@ -119,7 +119,7 @@ void loop()
       doDisconnect = true;
     }
     lastTransmitData = millis();
-    transmitData(2, t, h);
+    transmitData(wifiHandler.hostId, t, h);
     // if (doDisconnect)
     // {
     //   Serial.println("Disconnecting ...");

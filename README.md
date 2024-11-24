@@ -1,4 +1,4 @@
-# Environment sensor using Raspberry Pi Pico RP2024
+# Environment sensor using Raspberry Pi Pico W - RP2040
 
 This work is derived from https://randomnerdtutorials.com/esp32-ota-over-the-air-arduino/
 
@@ -23,7 +23,7 @@ This work is derived from https://randomnerdtutorials.com/esp32-ota-over-the-air
 
 - CONFIGURATION: https://docs.platformio.org/en/latest/boards/raspberrypi/pico.html?utm_source=platformio&utm_medium=piohome#frameworks
 - PLATFORM: Raspberry Pi Pico
-- HARDWARE: 
+- HARDWARE: Pico W 2040
 
 # Private Data
 
@@ -37,5 +37,13 @@ const char *OTAPASSWORD = "the OTA password";
 // WiFi Server stuff and WiFi logon Credentials
 const char *SSID = "the WIFI SSID";
 const char *PASSWORD = "the WIFI password";
+
+#define myPUBSUBID "xxxxx"
+#define myTOPIC "/xxxxx"
+
+#define MQTT_PORT nnn
+#define MQTT_SERVER "o.p.q.r"
+#define MQTT_USERNAME "xxxx"
+#define MQTT_PASSWORD "xxxxx"
 
 ```

@@ -7,8 +7,8 @@
 const char *pubSubId = myPUBSUBID;
 const char *topic = myTOPIC;
 
-WiFiClient espClient;
-PubSubClient client(espClient);
+WiFiClient wifiClient;
+PubSubClient client(wifiClient);
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
