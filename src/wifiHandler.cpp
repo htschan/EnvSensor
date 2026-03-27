@@ -41,6 +41,10 @@ void WiFiHandler::connect(int timeoutSec)
     getDeviceInfoByMAC(mac, hostId, hostName);
     WiFi.setHostname(hostName);
 
+#if defined(WIFI_USE_STATIC_IP) && WIFI_USE_STATIC_IP
+    WiFi.config(WIFI_LOCAL_IP, WIFI_DNS1, WIFI_GATEWAY, WIFI_SUBNET);
+#endif
+
     WiFi.begin(this->ssid, this->password);
     unsigned long entry = millis();
     while (WiFi.status() != WL_CONNECTED)
@@ -54,6 +58,7 @@ void WiFiHandler::connect(int timeoutSec)
     if (WiFi.status() == WL_CONNECTED)
     {
         Serial.printf("Connected to %s\nIP address: %s\n", this->ssid, WiFi.localIP().toString().c_str());
+        Serial.printf("Gateway: %s\n", WiFi.gatewayIP().toString().c_str());
         Serial.printf("MAC address: %02X:%02X:%02X:%02X:%02X:%02X  Hostname: %s\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], hostName);
         digitalWrite(LED_ONLINE, HIGH);
         wlanConnected = true;
