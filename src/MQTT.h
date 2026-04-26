@@ -29,11 +29,12 @@ void reconnect(int id)
 
   Serial.print("Attempting MQTT connection...");
   unsigned long connectEntry = millis();
-  while ((millis() - connectEntry < 5000) || !client.connect(pubSubId, MQTT_USERNAME, MQTT_PASSWORD))
+  while ((millis() - connectEntry < 5000) && !client.connected())
   {
+    client.connect(pubSubId, MQTT_USERNAME, MQTT_PASSWORD);
     sleep_ms(500);
   }
-  if (client.connect(pubSubId, MQTT_USERNAME, MQTT_PASSWORD))
+  if (client.connected())
   {
     JsonDocument doc;
     String jsonMessageString;
@@ -57,10 +58,16 @@ void reconnect(int id)
   }
 }
 
+void transmitData(int id, float temperature, float humidity, bool presence);
+
 void transmitData(int id, float temperature, float humidity)
 {
+  transmitData(id, temperature, humidity, false);
+}
+
+void transmitData(int id, float temperature, float humidity, bool presence)
+{
   unsigned long entry = millis();
-  char msg[200];
   JsonDocument doc;
   String jsonMessageString;
 
@@ -70,6 +77,7 @@ void transmitData(int id, float temperature, float humidity)
   {
     reconnect(id);
   }
+  client.loop();
 #ifdef DEBUG
   Serial.println(F("Transmitting packet ... "));
 #endif
@@ -83,9 +91,9 @@ void transmitData(int id, float temperature, float humidity)
   doc["I"] = id;
   doc["T"] = temperature;
   doc["H"] = humidity;
+  doc["P"] = presence;
   serializeJson(doc, jsonMessageString);
   client.publish(topic, jsonMessageString.c_str());
-  sleep_ms(1000);
   Serial.printf("Transmission time duration: %lu ms\n", millis() - entry);
   digitalWrite(LED_ONLINE, LOW);
 }

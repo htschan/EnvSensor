@@ -16,9 +16,14 @@ WebServer server(80);
 unsigned long ota_progress_millis = 0;
 unsigned long lastTransmitData = millis();
 unsigned long lastMeasurement = millis();
+unsigned long lastPresencePoll = millis();
+unsigned long rawPresenceChangedAt = millis();
 
 float t = 0.0;
 float h = 0.0;
+bool presenceDetected = false;
+bool rawPresenceDetected = false;
+unsigned long ledPresenceFlashEndTime = 0;  // When the LED flash should end
 
 SwitchDebouncer onlineSwitchDebouncer(WAKEUP_SWITCH, 5000);
 WiFiHandler wifiHandler(SSID, PASS);
@@ -60,10 +65,18 @@ void setup()
   // initialize the digital pin as an output.
   pinMode(LED_BUILTIN, OUTPUT); // Serial port for debugging purposes
   pinMode(LED_ONLINE, OUTPUT);  // Show online status
+  pinMode(LED_PRESENCE, OUTPUT); // Flash when presence detected
+  pinMode(LD2410_OUT_PIN, INPUT_PULLDOWN);
 
   digitalWrite(LED_ONLINE, HIGH);
 
   Serial.begin(115200);
+  uint8_t boardMac[6];
+  WiFi.macAddress(boardMac);
+  Serial.printf("Board MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", boardMac[0], boardMac[1], boardMac[2], boardMac[3], boardMac[4], boardMac[5]);
+  Serial1.setTX(LD2410_UART_TX_PIN);
+  Serial1.setRX(LD2410_UART_RX_PIN);
+  Serial1.begin(LD2410_UART_BAUD);
 
   server.on("/", []()
             { server.send(200, "text/html", "<!DOCTYPE html><html><body><h1>Hi! This is the Temperature and Humidity sensor.</h1></body></html>"); });
@@ -79,6 +92,10 @@ void setup()
   Serial.println("HTTP server started");
 
   dht11.begin();
+  presenceDetected = digitalRead(LD2410_OUT_PIN) == HIGH;
+  rawPresenceDetected = presenceDetected;
+  rawPresenceChangedAt = millis();
+  Serial.printf("LD2410 initialized: UART=%lu, OUT pin=%d, initial presence=%s\n", LD2410_UART_BAUD, LD2410_OUT_PIN, presenceDetected ? "true" : "false");
   Serial.println("Ready");
   sleep_ms(500);
   digitalWrite(LED_ONLINE, LOW);
@@ -92,6 +109,14 @@ void loop()
 {
   server.handleClient();
   ElegantOTA.loop();
+  
+  // Handle LED presence flash timeout
+  if (ledPresenceFlashEndTime > 0 && millis() >= ledPresenceFlashEndTime)
+  {
+    digitalWrite(LED_PRESENCE, LOW);
+    ledPresenceFlashEndTime = 0;
+  }
+  
   // wifiHandler.handleTimeout();
   onlineSwitchDebouncer.read();
   // if (onlineSwitchDebouncer.isPressed())
@@ -109,6 +134,38 @@ void loop()
     t = dht11.readTemperature();
     h = dht11.readHumidity();
   }
+
+  if (millis() - lastPresencePoll > PRESENCE_POLL_INTERVAL_MS)
+  {
+    lastPresencePoll = millis();
+    bool currentRawPresence = digitalRead(LD2410_OUT_PIN) == HIGH;
+
+    if (currentRawPresence != rawPresenceDetected)
+    {
+      rawPresenceDetected = currentRawPresence;
+      rawPresenceChangedAt = millis();
+    }
+
+    if (rawPresenceDetected != presenceDetected && (millis() - rawPresenceChangedAt) >= PRESENCE_DEBOUNCE_MS)
+    {
+      presenceDetected = rawPresenceDetected;
+      Serial.printf("Presence changed: %s\n", presenceDetected ? "true" : "false");
+
+      // Flash LED when presence is detected
+      if (presenceDetected)
+      {
+        digitalWrite(LED_PRESENCE, HIGH);
+        ledPresenceFlashEndTime = millis() + PRESENCE_LED_FLASH_DURATION_MS;
+      }
+
+      if (!wifiHandler.isConnected())
+      {
+        wifiHandler.connect(0);
+      }
+      transmitData(wifiHandler.hostId, t, h, presenceDetected);
+    }
+  }
+
   if (millis() - lastTransmitData > DATA_TRANSMIT_INTERVAL)
   {
     bool doDisconnect = false;
@@ -119,7 +176,7 @@ void loop()
       doDisconnect = true;
     }
     lastTransmitData = millis();
-    transmitData(wifiHandler.hostId, t, h);
+    transmitData(wifiHandler.hostId, t, h, presenceDetected);
     // if (doDisconnect)
     // {
     //   Serial.println("Disconnecting ...");
