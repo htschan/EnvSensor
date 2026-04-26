@@ -78,6 +78,7 @@ void setup()
   Serial1.setRX(LD2410_UART_RX_PIN);
   Serial1.begin(LD2410_UART_BAUD);
 
+  Serial.printf("Diagnostic info: CPU frequency: %u MHz, Free heap: %u bytes\n", rp2040.f_cpu() / 1000000, rp2040.getFreeHeap());
   server.on("/", []()
             { server.send(200, "text/html", "<!DOCTYPE html><html><body><h1>Hi! This is the Temperature and Humidity sensor.</h1></body></html>"); });
 
