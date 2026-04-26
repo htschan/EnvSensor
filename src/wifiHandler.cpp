@@ -9,6 +9,8 @@ WiFiHandler::WiFiHandler(const char *ssid, const char *password)
     this->password = password;
     this->wlanConnected = false;
     this->lastWlanConnected = millis();
+    this->hostId = 0;
+    this->hostName = "THSens-Unknown";
     pinMode(LED_ONLINE, OUTPUT); // Show online status
 }
 
@@ -16,7 +18,11 @@ DeviceInfo devices[] = {
     {{0x28, 0xCD, 0xC1, 0x0B, 0x1B, 0xC8}, 1, "THSens-1"},
     {{0x28, 0xCD, 0xC1, 0x02, 0xA3, 0xAA}, 2, "THSens-2"},
     {{0x28, 0xCD, 0xC1, 0x02, 0x97, 0x26}, 3, "THSens-3"},
-    {{0x28, 0xCD, 0xC1, 0x02, 0x87, 0xB4}, 4, "THSens-4"}};
+    {{0x28, 0xCD, 0xC1, 0x02, 0x87, 0xB4}, 4, "THSens-4"},
+    {{0x28, 0xCD, 0xC1, 0x12, 0x3A, 0x25}, 5, "THSens-5"},
+    {{0x28, 0xCD, 0xC1, 0x12, 0x3A, 0x27}, 6, "THSens-6"},
+    {{0x28, 0xCD, 0xC1, 0x12, 0x3A, 0x29}, 7, "THSens-7"},
+};
 
 bool WiFiHandler::getDeviceInfoByMAC(const uint8_t *mac, int &id, const char *&hostname)
 {
@@ -38,7 +44,12 @@ void WiFiHandler::connect(int timeoutSec)
     WiFi.mode(WIFI_STA);
     uint8_t mac[6];
     WiFi.macAddress(mac);
-    getDeviceInfoByMAC(mac, hostId, hostName);
+    if (!getDeviceInfoByMAC(mac, hostId, hostName))
+    {
+        Serial.printf("Unknown MAC %02X:%02X:%02X:%02X:%02X:%02X, using fallback host info\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        hostId = 0;
+        hostName = "THSens-Unknown";
+    }
     WiFi.setHostname(hostName);
 
 #if defined(WIFI_USE_STATIC_IP) && WIFI_USE_STATIC_IP

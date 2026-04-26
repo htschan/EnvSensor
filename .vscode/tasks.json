@@ -1,0 +1,38 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "PIO: Upload (picow)",
+      "type": "shell",
+      "command": "C:/Users/hanst/.platformio/penv/Scripts/platformio.exe run --target upload --environment picow",
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Upload (picow, manual BOOTSEL)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "Write-Host 'Put Pico W into BOOTSEL mode (hold BOOTSEL and tap RESET, or reconnect with BOOTSEL held), then press Enter...'; Read-Host | Out-Null; C:/Users/hanst/.platformio/penv/Scripts/platformio.exe run --target upload --environment picow"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Monitor (picow)",
+      "type": "shell",
+      "command": "C:/Users/hanst/.platformio/penv/Scripts/platformio.exe device monitor --environment picow",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Upload then Monitor (picow, two-step)",
+      "dependsOn": [
+        "PIO: Upload (picow)",
+        "PIO: Monitor (picow)"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    }
+  ]
+}
